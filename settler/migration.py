@@ -3,7 +3,7 @@ from os.path import basename
 
 
 class Migration(object):
-    def __init__(self, filename: str):
+    def __init__(self, filename):
         self._parse_filename(filename)
         self._parse_file(filename)
 
@@ -23,14 +23,14 @@ class Migration(object):
     def undo(self):
         return self._undo
 
-    def get_sql(self, undo: bool=False) -> str:
+    def get_sql(self, undo=False):
         """
         """
         return self.undo if undo else self.do
 
     _remove_comments_re = re.compile('--.*?\n')
 
-    def _parse_filename(self, filename: str):
+    def _parse_filename(self, filename):
         self._filename = filename
         name = basename(filename)
         try:
@@ -42,7 +42,7 @@ class Migration(object):
             raise Exception('Malformed migration: revision less than zero {}'
                             .format(filename))
 
-    def _parse_file(self, filename: str):
+    def _parse_file(self, filename):
         raw = ' '.join(open(filename, 'r').readlines())
         split = raw.split('@UNDO')
 
@@ -60,5 +60,5 @@ class Migration(object):
             raise Exception('Malformed migration: @UNDO is too short in {}'
                             .format(filename))
 
-    def _strip_comments(self, sql: str) -> str:
+    def _strip_comments(self, sql):
         return re.sub(self._remove_comments_re, '', sql)
