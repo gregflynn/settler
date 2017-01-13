@@ -1,7 +1,5 @@
 from os import listdir
 
-from sqlalchemy.exc import ProgrammingError
-
 from .migration import Migration
 
 
@@ -11,7 +9,7 @@ class MigrationManager(object):
     def __init__(self, db, migrations_dir='migrations'):
         """
         Args:
-            db (SQLAlchemy):
+            db (SQLAlchemy): the database connection
             migrations_dir (str): path to migrations files
         """
         if migrations_dir[-1] == '/':
@@ -62,10 +60,8 @@ class MigrationManager(object):
         """
         try:
             return self.MigrationTable.query.first().revision
-        except ProgrammingError:
+        except Exception:
             self.MigrationTable.__table__.create(bind=self.db.engine)
-            return -1
-        except AttributeError:
             return -1
 
     def _set_migration(self, new_revision):
