@@ -103,6 +103,6 @@ class MigrationManager(object):
             __tablename__ = 'migration'
             revision = db.Column(db.Integer, primary_key=True)
 
-            def __init__(self, revision: int):
+            def __init__(self, revision):
                 self.revision = revision
         self.MigrationTable = MigrationTable
