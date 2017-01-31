@@ -4,8 +4,6 @@ from .migration import Migration
 
 
 class MigrationManager(object):
-    db = None
-
     def __init__(self, db, migrations_dir='migrations'):
         """
         Args:

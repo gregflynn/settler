@@ -55,7 +55,8 @@ class Migration(object):
         """
         return self.undo if undo else self.do
 
-    def _read_file(self, path):
+    @staticmethod
+    def _read_file(path):
         """ Read the migration file
 
         Args:
@@ -68,7 +69,8 @@ class Migration(object):
             raw = ' '.join(f.readlines())
         return raw  # https://media.giphy.com/media/PjJw7ql19k0AU/giphy.gif
 
-    def _parse_rev(self, filename):
+    @staticmethod
+    def _parse_rev(filename):
         """ Parse out the revision number from the given filename
 
         Args:
@@ -87,7 +89,8 @@ class Migration(object):
                 'Bad Migration: revision < 0 in {}'.format(filename))
         return rev
 
-    def _parse_sql(self, filename, raw):
+    @classmethod
+    def _parse_sql(cls, filename, raw):
         """ Parse the migration file into do/undo statements
 
         Args:
@@ -99,15 +102,16 @@ class Migration(object):
         try:
             raw_do, raw_undo = raw.split('@UNDO')
         except ValueError:
+            f = filename
             raise Exception(
-                'Bad Migration: failed to separate do/undo in {}'.format(
-                    self._filename))
+                'Bad Migration: failed to separate do/undo in {}'.format(f))
 
-        do = self._strip_comments(raw_do)
-        undo = self._strip_comments(raw_undo)
+        do = cls._strip_comments(raw_do)
+        undo = cls._strip_comments(raw_undo)
         return do, undo
 
-    def _strip_comments(self, sql):
+    @staticmethod
+    def _strip_comments(sql):
         """ Remove comments from sql
 
         Args:

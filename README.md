@@ -1,5 +1,5 @@
 # settler
-Settler is a simple migration framework for Flask and SQLAlchemy
+Settler is a simple migration framework for Flask, SQLAlchemy, and Flask-SQLAlchmey.
 
 ```python
 from flask_sqlalchemy import SQLAlchemy
