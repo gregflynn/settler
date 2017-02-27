@@ -11,6 +11,7 @@ from settler import MigrationManager
 
 
 REGISTERED_TESTS = []
+ERROR_TESTS = []
 BAR = '''
 ===============================================================================
 '''
@@ -45,33 +46,39 @@ ENGINES = {
     'Flask-SQLAlchemy Engine': flask_sql_engine
 }
 
-MIGRATIONS = ['migrations_1', 'migrations_2']
+MIGRATIONS = ['migrations_1', 'migrations_2', 'migrations_3']
+
+
+def test_generator():
+    for mig_dir in MIGRATIONS:
+        for name, engine_builder in ENGINES.items():
+            yield mig_dir, name, engine_builder
 
 
 def test(test_func):
     @wraps(test_func)
     def wrapper():
-        for mig_dir in MIGRATIONS:
-            for name, engine_builder in ENGINES.items():
-                test_name = '{} on {} in {}'.format(test_func.__name__,
-                                                    name, mig_dir)
-                print(MSG.format(t='Running', msg=test_name))
+        for mig_dir, name, engine_builder in test_generator():
+            test_name = '{} on {} in {}'.format(test_func.__name__,
+                                                name, mig_dir)
+            print(MSG.format(t='Running', msg=test_name))
 
-                subprocess.call('./create_db.sh')
-                engine = engine_builder()
-                session = sessionmaker(bind=engine)()
+            subprocess.call('./create_db.sh')
+            engine = engine_builder()
+            session = sessionmaker(bind=engine)()
 
-                try:
-                    test_func(engine, session, mig_dir)
-                except Exception as e:
-                    print(MSG.format(t='Error', msg=e))
-                    traceback.print_exc()
-                finally:
-                    session.close()
-                    engine.dispose()
-                    subprocess.call('./drop_db.sh')
-                    print(MSG.format(t='Finished', msg=test_name))
-                    print(BAR)
+            try:
+                test_func(engine, session, mig_dir)
+            except Exception as e:
+                print(MSG.format(t='Error', msg=e))
+                ERROR_TESTS.append(test_name)
+                traceback.print_exc()
+            finally:
+                session.close()
+                engine.dispose()
+                subprocess.call('./drop_db.sh')
+                print(MSG.format(t='Finished', msg=test_name))
+                print(BAR)
 
     REGISTERED_TESTS.append(wrapper)
     return wrapper
@@ -85,8 +92,21 @@ def main_test(engine, session, migrations_dir):
     manager.check()
     manager.update()
     manager.check()
+    manager.undo()
+    manager.check()
+    manager.undo()
+    manager.check()
+    manager.update()
+    manager.check()
 
 
 # run all the tests!
 for test in REGISTERED_TESTS:
     test()
+
+if ERROR_TESTS:
+    print('The following tests failed to complete due to error')
+    for er_test in ERROR_TESTS:
+        print(er_test)
+else:
+    print('No tests returned in error')

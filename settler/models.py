@@ -14,6 +14,8 @@ class MigrationStatus(Base):
 
 
 class DatabaseStatus(object):
+    NO_REVISION = -1
+
     def __init__(self, session, engine):
         self.engine = engine
         self.session = session
@@ -31,7 +33,7 @@ class DatabaseStatus(object):
             migrations applied
         """
         status = self._current()
-        return -1 if status is None else status.revision
+        return self.NO_REVISION if status is None else status.revision
 
     def set_current_migration(self, new_revision):
         """ Set the database's current revision

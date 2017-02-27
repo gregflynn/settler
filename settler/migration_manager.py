@@ -6,12 +6,10 @@ from .models import DatabaseStatus
 
 CHECK_MSG = '''
   Database Revision: {db_rev}
-Migrations Revision: {mig_rev}
+Migrations Revision: {mig_rev}\
 '''
-
-UPDATE_MSG = '''
-Up to date!
-'''
+UPDATE_MSG = 'Up to date!'
+UNDO_MSG = 'Already at oldest revision'
 
 
 class MigrationManager(object):
@@ -56,6 +54,11 @@ class MigrationManager(object):
         """ Reverts the current revision
         """
         rev = self.status.get_current_migration()
+
+        if rev == DatabaseStatus.NO_REVISION:
+            print(UNDO_MSG)
+            return
+
         migrations = self._read_migrations()
         self._run(migrations[rev], undo=True)
 
