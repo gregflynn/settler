@@ -1,4 +1,4 @@
-from distutils.core import setup, find_packages
+from distutils.core import setup
 
 
 config = {
@@ -7,7 +7,7 @@ config = {
     'author': 'Greg Flynn',
     'author_email': 'gregflynn42@gmail.com',
     'url': 'https://github.com/gregflynn/settler',
-    'packages': find_packages(exclude=['tests', 'integration_tests'])
+    'packages': ['settler']
 }
 
 

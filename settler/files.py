@@ -6,7 +6,7 @@ REMOVE_COMMENTS_RE = re.compile('--.*?\n')
 SQL_TOO_SHORT_THRESHOLD = 5
 
 
-class Migration(object):
+class MigrationFile(object):
     def __init__(self, path):
         """
         Args:
@@ -16,7 +16,7 @@ class Migration(object):
         self._filename = basename(path)
         self._raw = self._read_file(path)
         self._rev = self._parse_rev(self._filename)
-        self._do, self._undo = self._parse_sql(self._raw)
+        self._do, self._undo = self._parse_sql(self._filename, self._raw)
 
     @property
     def filename(self):
@@ -82,11 +82,9 @@ class Migration(object):
         try:
             rev = int(filename.split('_', 1)[0])
         except:
-            raise Exception(
-                'Bad Migration: revision unparseable in {}'.format(filename))
+            raise RevisionUnparsableException(filename)
         if rev < 0:
-            raise Exception(
-                'Bad Migration: revision < 0 in {}'.format(filename))
+            raise RevisionTooLowException(filename)
         return rev
 
     @classmethod
@@ -102,9 +100,7 @@ class Migration(object):
         try:
             raw_do, raw_undo = raw.split('@UNDO')
         except ValueError:
-            f = filename
-            raise Exception(
-                'Bad Migration: failed to separate do/undo in {}'.format(f))
+            raise UnseparableException(filename)
 
         do = cls._strip_comments(raw_do)
         undo = cls._strip_comments(raw_undo)
@@ -121,3 +117,18 @@ class Migration(object):
             (str) sql stripped of comments
         """
         return re.sub(REMOVE_COMMENTS_RE, '', sql)
+
+
+class RevisionUnparsableException(Exception):
+    """ Failed to parse the revision number out of the file name
+    """
+
+
+class UnseparableException(Exception):
+    """ Means the migration could not be split into DO and UNDO correctly
+    """
+
+
+class RevisionTooLowException(Exception):
+    """ The revision number parsed from the filename was less than zero
+    """
