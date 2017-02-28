@@ -3,11 +3,10 @@ from os import listdir
 from .files import MigrationFile
 from .models import DatabaseStatus
 
-from sqlalchemy.orm import sessionmaker
+
 CHECK_MSG = '''
   Database Revision: {db_rev}
-Migrations Revision: {mig_rev}\
-'''
+Migrations Revision: {mig_rev}'''
 UPDATE_MSG = 'Up to date!'
 UNDO_MSG = 'Already at oldest revision'
 
@@ -22,9 +21,17 @@ class MigrationManager(object):
         if migrations_dir[-1] == '/':
             migrations_dir = migrations_dir[0:-1]
 
+        from sqlalchemy.orm import sessionmaker
         self.session = sessionmaker(bind=engine)()
         self.status = DatabaseStatus(self.session, engine)
         self.dir = migrations_dir
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.session:
+            self.session.close()
 
     def check(self):
         """ Print the current revision of the database and newest revision

@@ -3,7 +3,6 @@ import traceback
 from functools import wraps
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
@@ -84,16 +83,16 @@ def test(test_func):
 
 @test
 def main_test(engine, migrations_dir):
-    manager = MigrationManager(engine, migrations_dir=migrations_dir)
-    manager.check()
-    manager.update()
-    manager.check()
-    manager.undo()
-    manager.check()
-    manager.undo()
-    manager.check()
-    manager.update()
-    manager.check()
+    with MigrationManager(engine, migrations_dir=migrations_dir) as mgr:
+        mgr.check()
+        mgr.update()
+        mgr.check()
+        mgr.undo()
+        mgr.check()
+        mgr.undo()
+        mgr.check()
+        mgr.update()
+        mgr.check()
 
 
 # run all the tests!
