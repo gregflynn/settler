@@ -65,16 +65,14 @@ def test(test_func):
 
             subprocess.call('./create_db.sh')
             engine = engine_builder()
-            session = sessionmaker(bind=engine)()
 
             try:
-                test_func(engine, session, mig_dir)
+                test_func(engine, mig_dir)
             except Exception as e:
                 print(MSG.format(t='Error', msg=e))
                 ERROR_TESTS.append(test_name)
                 traceback.print_exc()
             finally:
-                session.close()
                 engine.dispose()
                 subprocess.call('./drop_db.sh')
                 print(MSG.format(t='Finished', msg=test_name))
@@ -85,10 +83,8 @@ def test(test_func):
 
 
 @test
-def main_test(engine, session, migrations_dir):
-    manager = MigrationManager(engine,
-                               session=session,
-                               migrations_dir=migrations_dir)
+def main_test(engine, migrations_dir):
+    manager = MigrationManager(engine, migrations_dir=migrations_dir)
     manager.check()
     manager.update()
     manager.check()

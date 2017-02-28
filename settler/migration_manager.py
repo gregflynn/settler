@@ -3,7 +3,7 @@ from os import listdir
 from .files import MigrationFile
 from .models import DatabaseStatus
 
-
+from sqlalchemy.orm import sessionmaker
 CHECK_MSG = '''
   Database Revision: {db_rev}
 Migrations Revision: {mig_rev}\
@@ -13,21 +13,16 @@ UNDO_MSG = 'Already at oldest revision'
 
 
 class MigrationManager(object):
-    def __init__(self, engine, session=None, migrations_dir='migrations'):
+    def __init__(self, engine, migrations_dir='migrations'):
         """
         Args:
-            TODO
+            engine: database engine for migration management
             migrations_dir (str): path to migrations files
         """
         if migrations_dir[-1] == '/':
             migrations_dir = migrations_dir[0:-1]
 
-        if session is not None:
-            self.session = session
-        else:
-            from sqlalchemy.orm import sessionmaker
-            self.session = sessionmaker(bind=engine)()
-
+        self.session = sessionmaker(bind=engine)()
         self.status = DatabaseStatus(self.session, engine)
         self.dir = migrations_dir
 
