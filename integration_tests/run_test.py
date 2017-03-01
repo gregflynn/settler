@@ -145,8 +145,12 @@ for test in REGISTERED_TESTS:
     test()
 
 if ERROR_TESTS:
-    print('The following tests failed to complete due to error')
+    print('''
+    FAILURE ({})
+    '''.format(len(ERROR_TESTS)))
     for er_test in ERROR_TESTS:
         print(er_test)
 else:
-    print('No tests returned in error')
+    print('''
+    SUCCESS!
+    ''')

@@ -3,10 +3,6 @@ from os import listdir
 from os.path import basename
 
 
-REMOVE_COMMENTS_RE = re.compile('--.*?\n')
-SQL_TOO_SHORT_THRESHOLD = 5
-
-
 class MigrationDirectory(object):
     NO_REVISION = -1
 
@@ -42,6 +38,8 @@ class MigrationDirectory(object):
 
 
 class MigrationFile(object):
+    COMMENTS_REGEX = re.compile('--.*?$', re.M)
+
     def __init__(self, path):
         """
         Args:
@@ -137,21 +135,19 @@ class MigrationFile(object):
         except ValueError:
             raise UnseparableException(filename)
 
-        do = cls._strip_comments(raw_do)
-        undo = cls._strip_comments(raw_undo)
-        return do, undo
+        return cls._strip(raw_do), cls._strip(raw_undo)
 
-    @staticmethod
-    def _strip_comments(sql):
-        """ Remove comments from sql
+    @classmethod
+    def _strip(cls, sql):
+        """ Remove comments and extra whitespace from sql
 
         Args:
             sql (str): sql string needing stripping
 
         Returns:
-            (str) sql stripped of comments
+            (str) sql stripped of comments and whitespace
         """
-        return re.sub(REMOVE_COMMENTS_RE, '', sql)
+        return cls.COMMENTS_REGEX.sub('', sql).strip()
 
 
 class RevisionUnparsableException(Exception):
