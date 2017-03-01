@@ -7,6 +7,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
 from settler import MigrationManager
+from settler.models import DatabaseStatus
 
 
 REGISTERED_TESTS = []
@@ -45,13 +46,48 @@ ENGINES = {
     'Flask-SQLAlchemy Engine': flask_sql_engine
 }
 
-MIGRATIONS = ['migrations_1', 'migrations_2', 'migrations_3']
+MIGRATIONS = {
+    'migrations_1': {
+        'directory_version': 0,
+        'after_1st_update': 0,
+        'after_1st_undo': DatabaseStatus.NO_REVISION,
+        'after_2nd_undo': DatabaseStatus.NO_REVISION,
+        'after_2nd_update': 0
+    },
+    'migrations_2': {
+        'directory_version': DatabaseStatus.NO_REVISION,
+        'after_1st_update': DatabaseStatus.NO_REVISION,
+        'after_1st_undo': DatabaseStatus.NO_REVISION,
+        'after_2nd_undo': DatabaseStatus.NO_REVISION,
+        'after_2nd_update': DatabaseStatus.NO_REVISION
+    },
+    'migrations_3': {
+        'directory_version': 2,
+        'after_1st_update': 2,
+        'after_1st_undo': 1,
+        'after_2nd_undo': 0,
+        'after_2nd_update': 2
+    }
+}
 
 
 def test_generator():
-    for mig_dir in MIGRATIONS:
+    for mig_dir in MIGRATIONS.keys():
         for name, engine_builder in ENGINES.items():
             yield mig_dir, name, engine_builder
+
+
+def assertDatabaseRevision(mgr, revision):
+    """ make an assertion that the database is a particular version
+    """
+    assert mgr.status.get_current_migration() == revision
+
+
+def assertDirectoryRevision(mgr, revision):
+    """ make an assertion that the migrations directory is a particular version
+    """
+    folder_revision = len(mgr._read_migrations()) - 1
+    assert folder_revision == revision
 
 
 def test(test_func):
@@ -66,7 +102,7 @@ def test(test_func):
             engine = engine_builder()
 
             try:
-                test_func(engine, mig_dir)
+                test_func(engine, mig_dir, MIGRATIONS[mig_dir])
             except Exception as e:
                 print(MSG.format(t='Error', msg=e))
                 ERROR_TESTS.append(test_name)
@@ -82,17 +118,27 @@ def test(test_func):
 
 
 @test
-def main_test(engine, migrations_dir):
+def main_test(engine, migrations_dir, expectations):
     with MigrationManager(engine, migrations_dir=migrations_dir) as mgr:
+        assertDirectoryRevision(mgr, expectations['directory_version'])
+        assertDatabaseRevision(mgr, -1)
         mgr.check()
+
         mgr.update()
         mgr.check()
+        assertDatabaseRevision(mgr, expectations['after_1st_update'])
+
         mgr.undo()
         mgr.check()
+        assertDatabaseRevision(mgr, expectations['after_1st_undo'])
+
         mgr.undo()
         mgr.check()
+        assertDatabaseRevision(mgr, expectations['after_2nd_undo'])
+
         mgr.update()
         mgr.check()
+        assertDatabaseRevision(mgr, expectations['after_2nd_update'])
 
 
 # run all the tests!
