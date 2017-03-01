@@ -1,6 +1,4 @@
-from os import listdir
-
-from .files import MigrationFile
+from .files import MigrationDirectory
 from .models import DatabaseStatus
 
 
@@ -24,7 +22,7 @@ class MigrationManager(object):
         from sqlalchemy.orm import sessionmaker
         self.session = sessionmaker(bind=engine)()
         self.status = DatabaseStatus(self.session, engine)
-        self.dir = migrations_dir
+        self.migs = MigrationDirectory(migrations_dir)
 
     def __enter__(self):
         return self
@@ -38,18 +36,16 @@ class MigrationManager(object):
         available in the migrations directory
         """
         rev = self.status.get_current_migration()
-        migrations = self._read_migrations()
+        mig_rev = self.migs.highest_revision
         print(CHECK_MSG.format(
             db_rev=rev if rev >= 0 else None,
-            mig_rev=migrations[-1].rev if migrations else None))
+            mig_rev=mig_rev if mig_rev >= 0 else None))
 
     def update(self):
         """ Migrate the database to the most up to date revision
         """
-        rev = self.status.get_current_migration()
-        migrations = self._read_migrations()
-        for migration in migrations[rev+1:]:
-            self._run(migration)
+        [self._run(x) for x in range(self.status.get_current_migration() + 1,
+                                     self.migs.highest_revision + 1)]
         print(UPDATE_MSG)
 
     def undo(self):
@@ -61,31 +57,13 @@ class MigrationManager(object):
             print(UNDO_MSG)
             return
 
-        migrations = self._read_migrations()
-        self._run(migrations[rev], undo=True)
+        self._run(rev, undo=True)
 
-    def _run(self, migration, undo=False):
+    def _run(self, revision, undo=False):
+        migration = self.migs[revision]
+        sql = migration.get_sql(undo=undo)
         print('Running migration: {filename}\n{sql}'.format(
-            filename=migration.filename,
-            sql=migration.get_sql(undo=undo))
-        )
-        sql = migration.undo if undo else migration.do
+            filename=migration.filename, sql=sql))
         self.session.execute(sql)
         self.status.set_current_migration(migration.rev
                                           if not undo else migration.rev - 1)
-
-    def _read_migrations(self):
-        """ private: read all migrations from disk, validate, and sort
-        """
-        migrations = [MigrationFile('{}/{}'.format(self.dir, p))
-                      for p in listdir(self.dir)]
-        migrations.sort(key=lambda m: m.rev)
-        self._validate_migrations(migrations)
-        return migrations
-
-    def _validate_migrations(self, migrations):
-        """ private: validate the migration set as a whole exception if invalid
-        """
-        for i, m in zip(range(0, len(migrations)), migrations):
-            if i != m.rev:
-                raise Exception()

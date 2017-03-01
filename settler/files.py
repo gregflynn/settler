@@ -1,9 +1,44 @@
 import re
+from os import listdir
 from os.path import basename
 
 
 REMOVE_COMMENTS_RE = re.compile('--.*?\n')
 SQL_TOO_SHORT_THRESHOLD = 5
+
+
+class MigrationDirectory(object):
+    NO_REVISION = -1
+
+    def __init__(self, migration_dir):
+        self.dir = migration_dir
+        self._read()
+
+    def _read(self):
+        migrations = [MigrationFile('{}/{}'.format(self.dir, p))
+                      for p in listdir(self.dir)]
+        migrations.sort(key=lambda m: m.rev)
+        self._validate(migrations)
+        self.migrations = migrations
+
+    @staticmethod
+    def _validate(migrations):
+        """ private: validate the migration set as a whole exception if invalid
+        """
+        for i, m in zip(range(0, len(migrations)), migrations):
+            if i != m.rev:
+                raise NonContiguousMigrationsException()
+
+    @property
+    def length(self):
+        return len(self.migrations)
+
+    @property
+    def highest_revision(self):
+        return self.length - 1 if self.length > 0 else self.NO_REVISION
+
+    def __getitem__(self, revision):
+        return self.migrations[revision]
 
 
 class MigrationFile(object):
@@ -131,4 +166,9 @@ class UnseparableException(Exception):
 
 class RevisionTooLowException(Exception):
     """ The revision number parsed from the filename was less than zero
+    """
+
+
+class NonContiguousMigrationsException(Exception):
+    """ Migration revision numbers do not increment by 1 from 0
     """

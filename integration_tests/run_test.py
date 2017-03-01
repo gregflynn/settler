@@ -86,8 +86,7 @@ def assertDatabaseRevision(mgr, revision):
 def assertDirectoryRevision(mgr, revision):
     """ make an assertion that the migrations directory is a particular version
     """
-    folder_revision = len(mgr._read_migrations()) - 1
-    assert folder_revision == revision
+    assert mgr.migs.highest_revision == revision
 
 
 def test(test_func):
