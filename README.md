@@ -1,29 +1,32 @@
 # settler
-Settler is a simple migration framework for Flask and SQLAlchemy
+Settler is a simple migration framework for Flask, SQLAlchemy, and Flask-SQLAlchmey.
 
 ```python
-from flask_sqlalchemy import SQLAlchemy
 from settler import MigrationManager
 
+# if you're using SQLAlchemy
+from sqlalchemy import create_engine
+engine = create_engine("db connection url", client_encoding='utf8')
 
-my_db = SQLAlchemy({ ... })
+# if you're using flask_sqlalchemy
+from flask_sqlalchemy import SQLAlchemy
+engine = SQLAlchemy({ ... }).engine
 
-migration_manager = MigrationManager(my_db, migrations_dir='migrations')
+with MigrationManager(engine, migrations_dir='migrations') as mgr:
+    #
+    # Check the database and migrations folder highest versions and print them
+    #
+    mgr.check()
 
-#
-# Check the database and migrations folder highest versions and print them
-#
-migration_manager.check()
+    #
+    # Bring your db up to the highest revision from the migrations folder
+    #
+    mgr.update()
 
-#
-# Bring your db up to the highest revision from the migrations folder
-#
-migration_manager.update()
-
-#
-# Undo the last migration applied
-#
-migration_manager.undo()
+    #
+    # Undo the last migration applied
+    #
+    mgr.undo()
 ```
 
 000_create_user.sql:
