@@ -12,22 +12,21 @@ engine = create_engine("db connection url", client_encoding='utf8')
 from flask_sqlalchemy import SQLAlchemy
 engine = SQLAlchemy({ ... }).engine
 
-migration_manager = MigrationManager(engine, migrations_dir='migrations')
+with MigrationManager(engine, migrations_dir='migrations') as mgr:
+    #
+    # Check the database and migrations folder highest versions and print them
+    #
+    mgr.check()
 
-#
-# Check the database and migrations folder highest versions and print them
-#
-migration_manager.check()
+    #
+    # Bring your db up to the highest revision from the migrations folder
+    #
+    mgr.update()
 
-#
-# Bring your db up to the highest revision from the migrations folder
-#
-migration_manager.update()
-
-#
-# Undo the last migration applied
-#
-migration_manager.undo()
+    #
+    # Undo the last migration applied
+    #
+    mgr.undo()
 ```
 
 000_create_user.sql:
