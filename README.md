@@ -13,20 +13,23 @@ from flask_sqlalchemy import SQLAlchemy
 engine = SQLAlchemy({ ... }).engine
 
 with MigrationManager(engine, migrations_dir='migrations') as mgr:
-    #
-    # Check the database and migrations folder highest versions and print them
-    #
+
+    """ Check the database and migrations folder highest versions and print them
+    """
     mgr.check()
 
-    #
-    # Bring your db up to the highest revision from the migrations folder
-    #
+    """ Bring your db up to the highest revision from the migrations folder
+    """
     mgr.update()
 
-    #
-    # Undo the last migration applied
-    #
+    """ Undo the last migration applied
+    """
     mgr.undo()
+
+    """ Make a new migration
+    """
+    mgr.new('new_migration')
+    # creates `migrations/000_new_migration.sql`
 ```
 
 000_create_user.sql:

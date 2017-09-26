@@ -59,6 +59,15 @@ class MigrationManager(object):
 
         self._run(rev, undo=True)
 
+    def new(self, name):
+        """ Create a new migration of the given name
+
+        Args:
+            name (str): name to give to the migration
+        """
+        filename = self.migs.new(name)
+        print('Created {}'.format(filename))
+
     def _run(self, revision, undo=False):
         migration = self.migs[revision]
         sql = migration.get_sql(undo=undo)

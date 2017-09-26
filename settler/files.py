@@ -5,6 +5,7 @@ from os.path import basename
 
 class MigrationDirectory(object):
     NO_REVISION = -1
+    NEW_TEMPLATE = '-- @DO\n\n\n-- @UNDO\n'
 
     def __init__(self, migration_dir):
         self.dir = migration_dir
@@ -35,6 +36,18 @@ class MigrationDirectory(object):
 
     def __getitem__(self, revision):
         return self.migrations[revision]
+
+    def new(self, name):
+        """ Create a new migration with the given name
+
+        Args:
+            name (str): name to give the new migration
+        """
+        revision = self.highest_revision + 1
+        filename = '{}/{:03d}_{}.sql'.format(self.dir, revision, name)
+        with open(filename, 'w') as f:
+            f.write(self.NEW_TEMPLATE)
+        return filename
 
 
 class MigrationFile(object):
