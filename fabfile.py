@@ -15,7 +15,7 @@ def install():
 @task
 def unit_tests():
     local('flake8')
-    local('nosetests tests/')
+    local('pytest tests/')
 
 
 @task

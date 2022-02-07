@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer
+from sqlalchemy import Column, Integer, inspect
 from sqlalchemy.ext.declarative import declarative_base
 
 
@@ -7,7 +7,10 @@ Base = declarative_base()
 
 class MigrationStatus(Base):
     __tablename__ = 'migration'
-    revision = Column(Integer, primary_key=True)
+
+    # NOTE: primary_key just so sqlalchemy doesn't yell at me, autoincrement off so
+    #       mysql/mariadb don't change the value when we insert it
+    revision = Column(Integer, primary_key=True, autoincrement=False)
 
     def __init__(self, revision):
         self.revision = revision
@@ -21,7 +24,8 @@ class DatabaseStatus(object):
         self.session = session
 
     def _current(self):
-        if not self.engine.has_table(MigrationStatus.__tablename__):
+        insp = inspect(self.engine)
+        if not insp.has_table(MigrationStatus.__tablename__):
             MigrationStatus.__table__.create(bind=self.engine)
         return self.session.query(MigrationStatus).first()
 
