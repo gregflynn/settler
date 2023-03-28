@@ -1,8 +1,9 @@
-from sqlalchemy import Column, Integer, inspect
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import inspect
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
 
 class MigrationStatus(Base):
@@ -10,9 +11,10 @@ class MigrationStatus(Base):
 
     # NOTE: primary_key just so sqlalchemy doesn't yell at me, autoincrement off so
     #       mysql/mariadb don't change the value when we insert it
-    revision = Column(Integer, primary_key=True, autoincrement=False)
+    revision: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
 
-    def __init__(self, revision):
+    def __init__(self, revision, **kw):
+        super().__init__(**kw)
         self.revision = revision
 
 

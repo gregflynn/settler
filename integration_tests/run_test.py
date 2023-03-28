@@ -34,7 +34,8 @@ def flask_sql_engine():
     flask_app = Flask(__name__)
     flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     flask_app.config['SQLALCHEMY_DATABASE_URI'] = get_db_url()
-    return SQLAlchemy(flask_app).engine
+    with flask_app.app_context():
+        return SQLAlchemy(flask_app).engine
 
 
 def sql_engine():

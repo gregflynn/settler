@@ -1,7 +1,7 @@
 flake8
 pytest
 ipdb
-flask==0.12
-psycopg2==2.6.2
-flask-sqlalchemy==2.1
+flask==2.2.3
+psycopg2==2.9.5
+flask-sqlalchemy==3.0.3
 fabric3

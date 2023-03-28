@@ -1,5 +1,5 @@
 #! /bin/bash
 
-psql -d postgres \
+psql -U postgres -h localhost -d postgres \
     -c "DROP DATABASE settler" \
     -c "DROP ROLE settler"

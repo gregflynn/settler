@@ -1,3 +1,5 @@
+from sqlalchemy import text
+
 from .files import MigrationDirectory
 from .models import DatabaseStatus
 
@@ -73,6 +75,6 @@ class MigrationManager(object):
         sql = migration.get_sql(undo=undo)
         print('Running migration: {filename}\n{sql}'.format(
             filename=migration.filename, sql=sql))
-        self.session.execute(sql)
+        self.session.execute(text(sql))
         self.status.set_current_migration(migration.rev
                                           if not undo else migration.rev - 1)

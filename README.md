@@ -46,3 +46,23 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users (email);
 DROP TABLE IF EXISTS users;
 DROP INDEX IF EXISTS idx_users_email;
 ```
+
+
+## Development
+
+### Dependencies
+- Create a virtualenv for settler
+    - `pyenv virtualenv 3.10.9 settler`
+- Activate that virtualenv on `cd`
+    - `pyenv local settler`
+- Install runtime and test requirements
+    - `pip install -e . -r test_requirements.txt`
+
+### Running Tests
+#### Unit Tests
+- `pytest tests`
+
+#### Integration Tests
+- Stand up docker compose
+- `cd integration_tests`
+- `python run_test.py`
