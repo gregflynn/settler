@@ -13,7 +13,8 @@ class MigrationDirectory(object):
 
     def _read(self):
         migrations = [MigrationFile('{}/{}'.format(self.dir, p))
-                      for p in listdir(self.dir)]
+                      for p in listdir(self.dir)
+                      if not p.startswith(".")]
         migrations.sort(key=lambda m: m.rev)
         self._validate(migrations)
         self.migrations = migrations

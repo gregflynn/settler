@@ -1,3 +1,4 @@
+import sqlparse
 from sqlalchemy import text
 
 from .files import MigrationDirectory
@@ -73,8 +74,10 @@ class MigrationManager(object):
     def _run(self, revision, undo=False):
         migration = self.migs[revision]
         sql = migration.get_sql(undo=undo)
-        print('Running migration: {filename}\n{sql}'.format(
-            filename=migration.filename, sql=sql))
-        self.session.execute(text(sql))
+
+        for stmt in sqlparse.split(sql):
+            print(f"Running migration: {migration.filename}\n{stmt}")
+            self.session.execute(text(stmt))
+
         self.status.set_current_migration(migration.rev
                                           if not undo else migration.rev - 1)

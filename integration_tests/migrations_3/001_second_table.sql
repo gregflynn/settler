@@ -1,9 +1,8 @@
 -- @DO
-CREATE TABLE second_table (
-    id SERIAL PRIMARY KEY,
-    email VARCHAR(100) UNIQUE,
-    active BOOLEAN DEFAULT FALSE
+CREATE TABLE testy (
+    a VARCHAR(1) PRIMARY KEY
 );
+ALTER TABLE testy ADD COLUMN b VARCHAR(10);
 
 -- @UNDO
-DROP TABLE second_table;
+DROP TABLE testy;

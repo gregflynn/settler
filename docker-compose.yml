@@ -5,4 +5,14 @@ services:
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
-      - 5432:5432
+      - "5432:5432"
+
+  mariadb:
+    image: mariadb:10.10.2
+    environment:
+      - MARIADB_ROOT_PASSWORD=rootpw
+      - MARIADB_DATABASE=settler
+      - MARIADB_USER=settler
+      - MARIADB_PASSWORD=settlerpassword
+    ports:
+      - "3306:3306"

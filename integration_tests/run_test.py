@@ -2,7 +2,8 @@ import subprocess
 import traceback
 from functools import wraps
 
-from sqlalchemy import create_engine
+import click
+from sqlalchemy import create_engine, text
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
@@ -17,34 +18,34 @@ BAR = '''
 '''
 MSG = '=== {t}: {msg}'
 
-
-def get_db_url():
-    info = {
-        'db_user': 'settler',
-        'db_pass': 'settlertest',
-        'db_name': 'settler',
-        'db_host': 'localhost',
-        'db_port': '5432'
-    }
-    return ("postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
-            .format(**info))
+POSTGRES_DB_URL = "postgresql://settler:settlertest@localhost:5432/settler"
+MARIADB_ROOT_URL = "mariadb+mariadbconnector://root:rootpw@127.0.0.1:3306"
 
 
 def flask_sql_engine():
     flask_app = Flask(__name__)
     flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    flask_app.config['SQLALCHEMY_DATABASE_URI'] = get_db_url()
+    flask_app.config['SQLALCHEMY_DATABASE_URI'] = POSTGRES_DB_URL
     with flask_app.app_context():
         return SQLAlchemy(flask_app).engine
 
 
-def sql_engine():
-    return create_engine(get_db_url(), client_encoding='utf8')
+def postgres_sql_engine():
+    return create_engine(POSTGRES_DB_URL, client_encoding='utf8')
+
+
+def maria_sql_engine():
+    return create_engine(
+        "mariadb+mariadbconnector://settler:settlerpassword@127.0.0.1:3306/settlerdb",
+        future=True,
+        pool_recycle=600,
+    )
 
 
 ENGINES = {
-    'SQLAlchemy Engine': sql_engine,
-    'Flask-SQLAlchemy Engine': flask_sql_engine
+    'SQLAlchemy Engine (psql)': postgres_sql_engine,
+    'Flask-SQLAlchemy Engine': flask_sql_engine,
+    'SQLAlchemy Engine (mariadb)': maria_sql_engine,
 }
 
 MIGRATIONS = {
@@ -78,39 +79,61 @@ def test_generator():
             yield mig_dir, name, engine_builder
 
 
-def assertDatabaseRevision(mgr, revision):
+def assert_database_revision(mgr, revision):
     """ make an assertion that the database is a particular version
     """
     assert mgr.status.get_current_migration() == revision
 
 
-def assertDirectoryRevision(mgr, revision):
+def assert_directory_revision(mgr, revision):
     """ make an assertion that the migrations directory is a particular version
     """
     assert mgr.migs.highest_revision == revision
+
+
+def create_db(db_type):
+    if db_type == "psql":
+        subprocess.call("scripts/create_psql_db.sh")
+    else:
+        engine = create_engine(MARIADB_ROOT_URL)
+        connection = engine.connect()
+
+        connection.execute(text("CREATE DATABASE IF NOT EXISTS settlerdb"))
+        connection.execute(text("GRANT ALL PRIVILEGES ON settlerdb.* TO settler"))
+
+
+def drop_db(db_type):
+    if db_type == "psql":
+        subprocess.call("scripts/drop_psql_db.sh")
+    else:
+        engine = create_engine(MARIADB_ROOT_URL)
+        connection = engine.connect()
+
+        connection.execute(text("DROP DATABASE IF EXISTS settlerdb"))
 
 
 def test(test_func):
     @wraps(test_func)
     def wrapper():
         for mig_dir, name, engine_builder in test_generator():
-            test_name = '{} on {} in {}'.format(test_func.__name__,
-                                                name, mig_dir)
-            print(MSG.format(t='Running', msg=test_name))
+            test_name = f"{test_func.__name__} on {name} in {mig_dir}"
+            click.secho(MSG.format(t='Running', msg=test_name), fg="yellow")
 
-            subprocess.call('./create_db.sh')
+            db_type = "mariadb" if "mariadb" in name else "psql"
+            create_db(db_type)
+
             engine = engine_builder()
 
             try:
                 test_func(engine, mig_dir, MIGRATIONS[mig_dir])
             except Exception as e:
-                print(MSG.format(t='Error', msg=e))
+                click.secho(MSG.format(t="Error", msg=e), fg="red")
                 ERROR_TESTS.append(test_name)
                 traceback.print_exc()
             finally:
                 engine.dispose()
-                subprocess.call('./drop_db.sh')
-                print(MSG.format(t='Finished', msg=test_name))
+                drop_db(db_type)
+                click.secho(MSG.format(t='Finished', msg=test_name), fg="yellow")
                 print(BAR)
 
     REGISTERED_TESTS.append(wrapper)
@@ -120,25 +143,25 @@ def test(test_func):
 @test
 def main_test(engine, migrations_dir, expectations):
     with MigrationManager(engine, migrations_dir=migrations_dir) as mgr:
-        assertDirectoryRevision(mgr, expectations['directory_version'])
-        assertDatabaseRevision(mgr, -1)
+        assert_directory_revision(mgr, expectations['directory_version'])
+        assert_database_revision(mgr, DatabaseStatus.NO_REVISION)
         mgr.check()
 
         mgr.update()
         mgr.check()
-        assertDatabaseRevision(mgr, expectations['after_1st_update'])
+        assert_database_revision(mgr, expectations['after_1st_update'])
 
         mgr.undo()
         mgr.check()
-        assertDatabaseRevision(mgr, expectations['after_1st_undo'])
+        assert_database_revision(mgr, expectations['after_1st_undo'])
 
         mgr.undo()
         mgr.check()
-        assertDatabaseRevision(mgr, expectations['after_2nd_undo'])
+        assert_database_revision(mgr, expectations['after_2nd_undo'])
 
         mgr.update()
         mgr.check()
-        assertDatabaseRevision(mgr, expectations['after_2nd_update'])
+        assert_database_revision(mgr, expectations['after_2nd_update'])
 
 
 # run all the tests!

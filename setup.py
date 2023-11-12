@@ -10,6 +10,7 @@ setup(
     packages=['settler'],
     provides=['settler'],
     install_requires=[
-        'sqlalchemy>=2.0'
+        'sqlalchemy>=2.0',
+        'sqlparse'
     ]
 )

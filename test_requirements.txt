@@ -1,7 +1,9 @@
+click
 flake8
 pytest
 ipdb
-flask==2.2.3
-psycopg2==2.9.5
-flask-sqlalchemy==3.0.3
+flask==3.0.0
+psycopg2==2.9.9
+flask-sqlalchemy==3.1.1
 fabric3
+mariadb
