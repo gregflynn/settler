@@ -3,7 +3,7 @@ from distutils.core import setup
 
 setup(
     name='settler',
-    version='0.5.2',
+    version='0.6.1',
     author='Greg Flynn',
     author_email='gregflynn42@gmail.com',
     url='https://github.com/gregflynn/settler',
